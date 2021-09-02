@@ -9,11 +9,33 @@ synapse:
     - members:
       - synapse
 
-synapse_systemd_file:
-  file.managed:
+old_synapse_service:
+  service.dead:
+    - name: synapse
+    - enable: False
+
+old_synapse_systemd_file:
+  file.absent:
     - name: /etc/systemd/system/synapse.service
-    - source: salt://profile/matrix/files/synapse.service
-    - require_in:
+
+/etc/systemd/system/matrix-synapse.service.d/override.conf
+  file.managed:
+    salt://profile/matrix/files/matrix-synapse-service-override.conf
+
+synapse_service:
+  service.running:
+    - name: matrix-synapse
+    - enable: True
+    - require:
+      - file: /etc/systemd/system/matrix-synapse.service.d/override.conf
+      - pkg: matrix-synapse
+      - service: old_snapse_service
+
+synapse_restart:
+  module.wait:
+    - name: service.restart
+    - m_name: matrix-synapse
+    - require:
       - service: synapse_service
 
 synapse_log_dir:
